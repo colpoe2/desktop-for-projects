@@ -1,0 +1,71 @@
+<!-- 编写一个带有删除确认框的html文件 -->
+<!-- Path: delete-project.html -->
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Delete Project</title>
+  <style>
+    /* 在这里添加必要的样式 */
+    .delete-project {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .delete-project button {
+      margin: 5px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .delete-project button:hover {
+      background-color: #ccc;
+    }
+
+    .delete-words {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="delete-project">
+    <h1>请确认<text class="delete-words">删除</text>操作?</h1>
+    <button id="confirm-delete">确认</button>
+    <button id="cancel-delete">取消</button>
+  </div>
+  <script>
+    // 获取主进程发送的数据，监听'project'事件
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+    const projectsFilePath = path.join(__dirname, 'projects.json');
+    var delProject = null;
+    ipcRenderer.on('project', (event, project) => {
+      delProject = project;
+    });
+    const confirmDelete = document.getElementById('confirm-delete');
+    const cancelDelete = document.getElementById('cancel-delete');
+    confirmDelete.addEventListener('click', () => {
+      // delProject是要删除的项目，对其进行删除操作，然后关闭窗口
+      // 删除projects.json中的项目
+      const projects = JSON.parse(fs.readFileSync(projectsFilePath, 'utf-8'));
+      const newProjects = projects.filter((project) => {
+        console.log(project.id, delProject.id);
+        return project.id !== delProject.id;
+      });
+      fs.writeFileSync(projectsFilePath, JSON.stringify(newProjects));
+      ipcRenderer.send('reload', 'index.html');
+      window.close();
+    });
+    cancelDelete.addEventListener('click', () => {
+      window.close();
+    });
+  </script>
+</body>
+
+</html>

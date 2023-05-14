@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Manager</title>
+  <style>
+    /* 在此处添加您的 CSS 样式 */
+    #projects-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin: 20px;
+    }
+
+    .project-icon {
+      border: 1px solid black;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    .project-icon.selected {
+      border: 1px solid #4caf50;
+      background-color: #c6c5c5;
+    }
+
+    .project-icon img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .project-actions {
+      margin-left: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+    }
+
+    .project-actions button {
+      margin: 5px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .project-actions button:hover {
+      background-color: #ccc;
+    }
+
+    .project-actions button:active {
+      background-color: #4caf50;
+    }
+
+    .project-actions .project-name {
+      font-size: 20px;
+      font-weight: bold;
+      user-select: none;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+    }
+
+    .progress-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 20px;
+    }
+
+    .progress-bar {
+      width: 90%;
+      height: 5px;
+      border-radius: 5px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      background-color: #c6c5c5;
+    }
+
+    .progress-bar .progress {
+      height: 5px;
+      background-color: #4caf50;
+      border-radius: 5px;
+    }
+
+    .project-summary {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px;
+    }
+
+    .project-summary .project-name {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .summary-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: left;
+    }
+
+    /* li元素前有checkbox并且可以勾选 */
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: rgb(227, 225, 225);
+      /* ul相对于project-summary对齐最左边，而不是居中 */
+      width: 80%;
+    }
+
+    .project-summary li {
+      margin: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    li::before {
+      content: "";
+      margin-right: 10px;
+    }
+
+    li input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    li input[type="checkbox"]:checked+label {
+      text-decoration: line-through;
+    }
+
+    /* 设置css样式使summary的类名为"project-actions"的div里的子标签美化排列*/
+    .project-summary .project-actions {
+      width: 80%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-around;
+    }
+
+    .project-summary .project-actions * {
+      margin-right: 4%;
+    }
+
+    .project-actions .project-buttons button {
+      margin: 5px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      flex-grow: 0.25;
+    }
+
+    .project-actions .project-buttons button:hover {
+      background-color: #ccc;
+    }
+
+    .project-actions .project-buttons button:active {
+      background-color: #4caf50;
+    }
+
+    .project-actions .project-name {
+      font-size: 20px;
+      font-weight: bold;
+      flex-grow: 1;
+    }
+
+    .project-actions img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    /* 以下是浮窗的css样式 */
+    .popup2,
+    .popup {
+      position: absolute;
+      height: auto;
+      border: 1px solid #999;
+      background-color: rgb(255, 255, 255);
+      box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.8s;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .popup2.show,
+    .popup.show {
+      visibility: visible;
+      opacity: 0.95;
+    }
+
+    .popup2>div,
+    .popup>div {
+      padding: 10px;
+    }
+
+    .popup2 img,
+    .popup img {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .icon {
+      margin-right: 10px;
+    }
+
+    .folder {
+      color: #008000;
+    }
+
+    .file {
+      color: #0000ff;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 在此处添加您的 HTML 内容 -->
+
+  <!-- 添加一个包含项目图标的容器 -->
+  <div id="projects-container"></div>
+
+  <!-- 添加一个包含进度轴的容器 -->
+  <div id="progress-container"></div>
+
+  <!-- 添加一个浮窗 -->
+  <div class="popup">
+    <div>
+      <div id="file-list"></div>
+    </div>
+  </div>
+  <div class="popup2">
+    <div>
+      <div id="note-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const fs = require('fs');
+    const path = require('path');
+    const { ipcRenderer } = require('electron');
+    const hljs = require('highlight.js/lib/common');
+    const showdown = require('showdown');
+    // 在此处使用 BrowserWindow 类
+    const projectsFilePath = path.join(__dirname, 'projects.json');
+    // 示例项目数据，您可以根据需要从其他来源获取数据
+    const projects = JSON.parse(fs.readFileSync(projectsFilePath, 'utf-8'));
+    // 在此处添加您的 JavaScript 代码
+    window.shell = require("electron").shell;
+    const projectsContainer = document.getElementById("projects-container");
+    // 绑定键盘ESC键，取消选中所有项目
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        unselectAllProjects();
+      }
+    });
+
+    // 选中某一项目时，摁下Ctrl + E键，打开对应的项目New_project窗口
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "e" && event.ctrlKey) {
+        const selectedProject = document.querySelector(".project-icon.selected");
+        if (selectedProject) {
+          const project = projects.find((project) => {
+            return project.name === selectedProject.querySelector(".project-name").innerText;
+          });
+          console.log(project.name);
+          if (project) {
+            ipcRenderer.send('openWindow', 'new-project.html', project);
+          }
+        }
+      }
+    });
+    // 选中一个项目时，摁下Ctrl + D键，弹出确认删除对话框，确认后，删除对应的项目和配置文件，并刷新项目列表
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "d" && event.ctrlKey) {
+        const selectedProject = document.querySelector(".project-icon.selected");
+        if (selectedProject) {
+          const project = projects.find((project) => {
+            return project.name === selectedProject.querySelector(".project-name").innerText;
+          });
+          console.log("准备删除 " + project.name);
+          if (project) {
+            ipcRenderer.send('openWindow', 'delete-project.html', project);
+          }
+        }
+      }
+    });
+    // 全局变量popup
+    const popup = document.querySelector(".popup");
+    const popup2 = document.querySelector(".popup2");
+    // 读取config.json文件，获取配置信息
+    const configFilePath = path.join(__dirname, 'config.json');
+    const config = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+    const popupWidth = config.popup.width;
+    popup.style.width = popupWidth + "px";
+    popup2.style.width = popupWidth + "px";
+    // 使用项目数据创建项目图标
+    projects.forEach((project) => {
+      const projectIcon = document.createElement("div");
+      projectIcon.classList.add("project-icon");
+      projectIcon.innerHTML = `
+      <div class="project-actions">
+      <img src="${project.icon}" alt="${project.name}" />
+      <div class="project-name">${project.name}</div>
+      </div>
+      <div class="project-actions">
+        <button class="path-something">👁️</button>
+        <button class="note-something">📝</button>
+      </div>
+    `;
+
+      // 添加点击事件处理器
+      projectIcon.addEventListener("dblclick", () => {
+        // 选中项目
+        unselectAllProjects();
+        projectIcon.classList.toggle("selected");
+
+        // 导航到项目文件
+        if (projectIcon.classList.contains("selected")) {
+          window.shell.openPath(project.path);
+          showProgress(project);
+        }
+      });
+      projectIcon.addEventListener("click", () => {
+        unselectAllProjects();
+        // 选中项目
+        projectIcon.classList.toggle("selected");
+        showProgress(project);
+      });
+
+
+      const pathSomethingButton = projectIcon.querySelector(".path-something");
+      const noteSomethingButton = projectIcon.querySelector(".note-something");
+
+
+      // 定义pathSomethingButton的hover事件
+      pathSomethingButton.addEventListener("mouseover", (event) => {
+        event.stopPropagation();
+        // 计算popup浮窗位置
+        const rect = projectIcon.getBoundingClientRect();
+        popup.style.left = rect.left - Math.floor((popupWidth - rect.width) / 2) + "px";
+        popup.style.top = rect.bottom + 20 + "px";
+        // 显示popup浮窗
+        popup.classList.add("show");
+        // 获取项目路径
+        const projectPath = project.path;
+        displayDirectoryContents(projectPath);
+      });
+      // path-something按钮mouseout事件
+      pathSomethingButton.addEventListener("mouseout", (event) => {
+        event.stopPropagation();
+        // 隐藏popup浮窗
+        popup.classList.remove("show");
+      });
+
+      noteSomethingButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        // 在这里实现编辑note内容
+        ipcRenderer.send('openWindow', 'note.html', project);
+      });
+      // 定义noteSomethingButton的hover事件
+      noteSomethingButton.addEventListener("mouseover", (event) => {
+        event.stopPropagation();
+        // 在这里实现显示note内容
+        let note = project.note ? project.note : "暂无note内容";
+        displayNoteContents(note);
+        // 计算popup浮窗位置
+        const rect = projectIcon.getBoundingClientRect();
+        popup2.style.left = rect.left - Math.floor((popupWidth - rect.width) / 2) + "px";
+        popup2.style.top = rect.bottom + 20 + "px";
+        // 显示popup浮窗
+        popup2.classList.add("show");
+
+      });
+      // note-something按钮mouseout事件
+      noteSomethingButton.addEventListener("mouseout", (event) => {
+        event.stopPropagation();
+        // 隐藏popup浮窗
+        popup2.classList.remove("show");
+      });
+      projectsContainer.appendChild(projectIcon);
+    });
+    // 在此处添加其他代码...
+    // 取消选中所有项目
+    function unselectAllProjects() {
+      const projectIcons = document.querySelectorAll(".project-icon");
+      projectIcons.forEach((projectIcon) => {
+        projectIcon.classList.remove("selected");
+      });
+    }
+    // 显示进度轴, summary为项目摘要做成TODO list的形式, progress为项目进度
+    // TODO list可以编辑，可以打勾，可以添加新的TODO
+    // 项目进度可以通过打勾的TODO数量计算得出
+    function showProgress(project) {
+      const progressContainer = document.getElementById("progress-container");
+      // 获取summary数组并动态添加到ul中，格式为<li><input type="checkbox" /><label contenteditable="true">summary[i]</label></li>
+      // 在project-name右边添加"添加"按钮和"删除"按钮以及"保存"按钮
+      progressContainer.innerHTML = `
+        <div class="project-summary">
+          <div class="project-actions">
+            <img src="${project.icon}" alt="${project.name}" />
+            <text class="project-name">${project.name}</text>
+            <div class="project-buttons"></div>
+          </div>
+          <div class="summary-wrapper">
+            <ul class="summary">
+            </ul>
+          </div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress"></div>
+          </div>
+          <text class="progress-text"></text>
+        </div>
+      `;
+      const summaryContainer = document.querySelector(".summary");
+      let summary = project.summary ? project.summary : [];
+      liTempList = [];
+      // 动态添加summary如{checked: true, content: TODO1, }，以及对应的checkbox的勾选状态, 格式为<li><input type="checkbox" /><label contenteditable="true">summary[i]</label></li>
+      summary.forEach((item) => {
+        const li = document.createElement("li");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.checked;
+        const label = document.createElement("label");
+        label.contentEditable = "true";
+        label.innerText = item.content;
+        li.appendChild(checkbox);
+        li.appendChild(label);
+        // 给li添加点击事件处理,label处于focus时，保存到liTempList中,方便后面删除
+        label.onfocus = () => {
+          liTempList.push(li);
+        };
+        summaryContainer.appendChild(li);
+      });
+
+      // 添加进度条
+      const progress = document.querySelector(".progress");
+      const progressText = document.querySelector(".progress-text");
+      let toDoList = document.querySelectorAll(".summary li") ? document.querySelectorAll(".summary li") : [];
+      let toDoListLength = toDoList.length;
+      // 计算已经完成的TODO数量
+      let checkedToDoListLength = 0;
+      for (let i = 0; i < toDoListLength; i++) {
+        if (toDoList[i].querySelector("input").checked) {
+          checkedToDoListLength++;
+        }
+      }
+      if (toDoListLength === 0) {
+        progressText.innerText = "0%";
+        progress.style.width = "0%";
+      } else {
+        progressText.innerText = `${Math.round((checkedToDoListLength / toDoListLength) * 100)}%`;
+        progress.style.width = `${(checkedToDoListLength / toDoListLength) * 100}%`;
+      }
+      toDoList.forEach((toDo) => {
+        const checkbox = toDo.querySelector("input");
+        checkbox.addEventListener("click", () => {
+          if (checkbox.checked) {
+            checkedToDoListLength++;
+          } else {
+            checkedToDoListLength--;
+          }
+          progress.style.width = `${(checkedToDoListLength / toDoListLength) * 100}%`;
+          progressText.innerText = `${Math.round((checkedToDoListLength / toDoListLength) * 100)}%`;
+        });
+      });
+      // 在project-actions中添加添加按钮可以添加新的TODO
+      const projectActions = document.querySelector(".project-summary .project-buttons");
+      const addButton = document.createElement("button");
+      addButton.innerText = "添加";
+      addButton.classList.add("add-button");
+      addButton.addEventListener("click", () => {
+        const toDo = document.createElement("li");
+        toDo.innerHTML = `
+          <input type="checkbox" />
+          <label contenteditable="true">New TODO</label>
+        `;
+        // 给新的TODO添加点击事件处理器
+        const newLabel = toDo.querySelector("label");
+        newLabel.onfocus = () => {
+          liTempList.push(toDo);
+        };
+
+        summaryContainer.appendChild(toDo);
+        toDoListLength++;
+        // 添加新的TODO后更新进度条
+        progress.style.width = `${(checkedToDoListLength / toDoListLength) * 100}%`;
+        progressText.innerText = `${Math.round((checkedToDoListLength / toDoListLength) * 100)}%`;
+        // 添加新的TODO后给新的TODO添加点击事件处理器
+        const checkbox = toDo.querySelector("input");
+        checkbox.addEventListener("click", () => {
+          if (checkbox.checked) {
+            checkedToDoListLength++;
+          } else {
+            checkedToDoListLength--;
+          }
+          progress.style.width = `${(checkedToDoListLength / toDoListLength) * 100}%`;
+          progressText.innerText = `${Math.round((checkedToDoListLength / toDoListLength) * 100)}%`;
+        });
+      });
+      projectActions.appendChild(addButton);
+
+
+      // 在project-actions中添加删除按钮可以删除TODO
+      const deleteButton = document.createElement("button");
+      deleteButton.innerText = "删除";
+      deleteButton.classList.add("delete-button");
+      // 删除按钮的点击事件处理器
+      deleteButton.addEventListener("click", () => {
+        // 先获取liTempList的最后一个元素，然后删除该元素，最后把光标移动到下一个元素或上一个元素
+        const li = liTempList.pop();
+        const nextLi = li.nextSibling || li.previousSibling;
+        li.parentNode.removeChild(li);
+        toDoListLength--;
+        if (li.querySelector("input").checked) {
+          checkedToDoListLength--;
+        }
+        if (nextLi) {
+          nextLi.focus();
+        }
+        // 删除TODO后更新进度条
+        progress.style.width = `${(checkedToDoListLength / toDoListLength) * 100}%`;
+        progressText.innerText = `${Math.round((checkedToDoListLength / toDoListLength) * 100)}%`;
+      });
+      projectActions.appendChild(deleteButton);
+
+      // 在project-actions中添加保存按钮可以把数组形式的summary保存到项目配置文件中
+      const saveButton = document.createElement("button");
+      saveButton.innerText = "保存";
+      saveButton.classList.add("save-button");
+      saveButton.addEventListener("click", () => {
+        // 在这里实现保存功能
+        toDoList = document.querySelectorAll(".summary li");
+        // 同时保存每个todolist的checkbox状态
+        summary = [];
+        toDoList.forEach((toDo) => {
+          const checkbox = toDo.querySelector("input");
+          const label = toDo.querySelector("label");
+          summary.push({
+            checked: checkbox.checked,
+            content: label.innerText
+          });
+        });
+        project.summary = summary;
+        console.log(project.summary);
+        // 更新projects变量的值
+        projects.forEach((p) => {
+          if (p.name === project.name) {
+            p.summary = project.summary;
+          }
+        });
+        fs.writeFileSync(projectsFilePath, JSON.stringify(projects));
+
+      });
+      projectActions.appendChild(saveButton);
+    }
+    // 浮窗用于预览显示和编辑path-something的内容以及预览和编辑note-something的内容
+    const fileList = document.getElementById('file-list');
+    // 处理在file-list中预览功能的函数
+    function displayDirectoryContents(directoryPath) {
+      fs.readdir(directoryPath, (err, files) => {
+        if (err) {
+          alert(`无法读取目录：${err.message}`);
+          return;
+        }
+
+        fileList.innerHTML = '';
+
+        files.forEach((file) => {
+          const filePath = path.join(directoryPath, file);
+
+          fs.stat(filePath, (err, stats) => {
+            if (err) {
+              alert(`无法读取文件信息：${err.message}`);
+              return;
+            }
+
+            const fileItem = document.createElement('div');
+            fileItem.classList.add('file-item');
+
+            const icon = document.createElement('span');
+            icon.classList.add('icon');
+
+            if (stats.isDirectory()) {
+              icon.classList.add('folder');
+              icon.innerHTML = '&#128193;';
+            } else {
+              icon.classList.add('file');
+              icon.innerHTML = '&#128196;';
+            }
+
+            fileItem.appendChild(icon);
+
+            const fileName = document.createElement('span');
+            fileName.textContent = file;
+            fileItem.appendChild(fileName);
+
+            fileList.appendChild(fileItem);
+          });
+        });
+      });
+    }
+    // 处理在note-list中预览功能的函数
+    const noteList = document.getElementById('note-list');
+    function displayNoteContents(data) {
+      noteList.innerHTML = '';
+      const noteItem = document.createElement('div');
+      noteItem.classList.add('note-item');
+      // 转换为markdown格式
+      var converter = new showdown.Converter({
+        extensions: [
+          {
+            type: 'lang',
+            regex: /```([a-z]*?)\n([\w\W]*?)\n```/g,
+            replace: function (match, lang, code) {
+              if (hljs.getLanguage(lang)) {
+                return '<pre><code class="' + lang + '">' +
+                  hljs.highlight(lang, code).value +
+                  '</code></pre>';
+              }
+              return match;
+            }
+          }
+        ]
+      });
+      const html = converter.makeHtml(data);
+      noteItem.innerHTML = html;
+      noteList.appendChild(noteItem);
+    }
+  </script>
+</body>
+
+</html>

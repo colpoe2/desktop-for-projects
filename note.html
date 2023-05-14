@@ -1,0 +1,62 @@
+<!-- 一个简单的文本框页面 -->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>note</title>
+  <meta charset="utf-8">
+  <style>
+    textarea {
+      width: 100%;
+      height: 240px;
+    }
+  </style>
+</head>
+
+<body>
+  <form action="note.php" method="post">
+    <textarea id="note" name="note"></textarea>
+    <br>
+    <input type="submit" value="提交">
+    <button type="button" onclick="window.close()">关闭</button>
+  </form>
+  <script>
+    // 监控主进程,当主进程发送消息时,执行回调函数
+    const fs = require('fs');
+    const path = require('path');
+    const { ipcRenderer } = require('electron');
+    const noteInput = document.getElementById("note");
+    let projectThis = {};
+    ipcRenderer.on('project', (event, project) => {
+      projectThis = project;
+      noteInput.value = project.note ? project.note : "";
+    });
+    const projectsFilePath = path.join(__dirname, 'projects.json');
+    const projects = JSON.parse(fs.readFileSync(projectsFilePath, 'utf-8'));
+    // 监听表单提交事件
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      // 获取表单中的数据
+      const note = noteInput.value;
+      
+      // 将数据保存到项目对象中
+      projectThis.note = note;
+      // 重写项目对象
+      for (let i = 0; i < projects.length; i++) {
+        if (projects[i].id === projectThis.id) {
+          projects[i] = projectThis;
+          break;
+        }
+      }
+      // 将项目对象写入文件
+      fs.writeFileSync(projectsFilePath, JSON.stringify(projects));
+      // 通知主进程刷新
+      ipcRenderer.send('reload', 'index.html');
+      // 关闭窗口
+      window.close();
+    });
+  </script>
+</body>
+
+</html>

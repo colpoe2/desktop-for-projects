@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>New Project</title>
+  <style>
+    /* 在这里添加必要的样式 */
+  </style>
+</head>
+
+<body>
+  <h1>New Project</h1>
+  <form>
+    <label for="path">Path:</label>
+    <input type="text" id="path" name="path" value=""><br>
+    <!-- 选择文件夹获得文件夹路径 -->
+    <button type="button" id="select">浏览</button><br>
+    <!-- <input type="file" id="dir" name="dir" webkitdirectory directory><br> -->
+
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" value=""><br>
+
+    <!-- 图标和随机按钮 -->
+    <label for="icon">Icon:</label>
+    <input type="text" id="icon" name="icon" value="icon_k/16-状态灯-软件狗-绿.png"><br>
+    <button type="button" id="random">改变图标</button><br>
+    <!-- 图标预览 -->
+    <img src="icon_k/16-状态灯-软件狗-绿.png" alt="icon" id="icon-preview" width="50" height="50"><br>
+
+
+    <button type="submit">保存</button>
+    <button type="button" onclick="window.close()">取消</button>
+  </form>
+
+  <script>
+    // 在这里添加JavaScript代码，以便将项目信息添加到窗口中
+    // 点击save按钮后，将项目信息保存到projects.json文件中
+    const fs = require('fs');
+    const path = require('path');
+    const { ipcRenderer } = require('electron');
+    const nameInput = document.getElementById("name");
+    const iconInput = document.getElementById("icon");
+    const pathInput = document.getElementById("path");
+    // 监听名为 'project' 的消息，并在接收到该消息时执行回调函数
+    ipcRenderer.on('project', (event, project) => {
+      nameInput.value = project.name;
+      iconInput.value = project.icon;
+      pathInput.value = project.path;
+    });
+    //进行读取文件操作
+    const projectsFilePath = path.join(__dirname, 'projects.json');
+    const projects = JSON.parse(fs.readFileSync(projectsFilePath, 'utf-8'));
+    // 文件夹选择器
+    const input_button = document.querySelector('#select');
+    input_button.addEventListener('click', () => {
+      console.log('click');
+      ipcRenderer.send('open-directory-dialog');
+    });
+
+    ipcRenderer.on('selected-directory', (event, directoryPath) => {
+      console.log(directoryPath);
+      pathInput.value = directoryPath;
+    });
+    // 随机生成项目图标
+    const iconPreview = document.getElementById("icon-preview");
+    const randomButton = document.getElementById("random");
+    randomButton.addEventListener("click", (event) => {
+      const iconPath = path.join(__dirname, "icon_k");
+      const iconFiles = fs.readdirSync(iconPath);
+      const randomIndex = Math.floor(Math.random() * iconFiles.length);
+      const randomIcon = iconFiles[randomIndex];
+      iconInput.value = path.join(iconPath, randomIcon);
+      iconPreview.src = iconInput.value;
+    });
+    const form = document.querySelector("form");
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const newProject = {
+        id: Date.now().toString(),
+        path: pathInput.value,
+        name: nameInput.value,
+        icon: iconInput.value,
+      };
+      // 检查是否存在相同的项目
+      const existingProject = projects.find((project) => {
+        return project.path === newProject.path;
+      });
+      if (existingProject) {
+        console.log(existingProject);
+        // 弹出确认框，确认后进行修改原项目配置文件的操作
+        const result = confirm("已有项目->${existingProject.name}，是否覆盖？");
+        if (result) {
+          const index = projects.indexOf(existingProject);
+          projects.splice(index, 1, newProject);
+          fs.writeFileSync(projectsFilePath, JSON.stringify(projects));
+          window.close();
+        }
+        return;
+      }
+      projects.push(newProject);
+      fs.writeFileSync(projectsFilePath, JSON.stringify(projects));
+      ipcRenderer.send('reload', 'index.html');
+      window.close();
+    });
+
+  </script>
+</body>
+
+</html>
